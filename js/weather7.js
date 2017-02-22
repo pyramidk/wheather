@@ -6,17 +6,6 @@ var myApp= new Framework7({
 });
 
 var $$ = Dom7;
-// //注册   可以获得星期
-// Template7.registerHelper('dayOfWeek', function (data) {
-// 	date = new Date(date);
-// 	var days = ('星期日 星期一 星期二 星期三 星期四 星期五 星期六').split(' ');
-// 	return days[date.getDay()];
-// });
-// Template7.registerHelper('formatedDated', function (date) {
-//     date = new Date(date);
-//     var months = '一月 二月 三月 四月 五月 六月 七月 八月 九月 十月 十一月 十二月'.split(' ');
-//     return months[date.getMonth()] + ' ' + date.getDate() + ' ' + date.getFullYear();
-// });
 
 // Templates using Template7 template engine
 myApp.searchResultsTemplate = Template7.compile($$('#search-results-template').html());
@@ -29,6 +18,8 @@ var mainView = myApp.addView('.view-main');
 //搜索相关
 var searchTimeout;
 var flickrAPIKey = 'c3bd54dcf0754905b52f5ed0a68e9204';
+
+// var searchTarget = '北京';
 
 myApp.searchLocation = function () {
 	var searchTarget = $$('.searchbar-input input').val();
@@ -48,6 +39,7 @@ myApp.searchLocation = function () {
             //判断是否有搜索结果
             if(results["HeWeather data service 3.0"][0]["status"] === 'ok') {
             	var places = results["HeWeather data service 3.0"][0]["basic"];
+                console.log(places);
             	html = myApp.searchResultsTemplate(places);
             }
             $$('.popup .search-results').html(html);
@@ -93,7 +85,7 @@ $$('.popup .search-results').on('click', 'li', function () {
         country: li.attr('data-country')
     })
     localStorage.storePlaces = JSON.stringify(places);
-
+    console.log(localStorage.storePlaces);
     myApp.updateWeatherData(function () {
         myApp.buildIndexHtml();
     });
@@ -106,7 +98,8 @@ $$('.popup .search-results').on('click', 'li', function () {
 myApp.updateWeatherData = function (callback) {
     var city = [];   
     if (!localStorage.storePlaces) {    //因为需要缓存来获取更多的数据， 所以需要判断
-        return;
+        localStorage.storePlaces = '[{"id":"CN101010100","city":"北京","country":"中国"}]';
+        // localStorage.setItme('storePlaces',)
     }
     var places = JSON.parse(localStorage.storePlaces);
     for (var i = 0; i < places.length; i++) {
@@ -114,12 +107,10 @@ myApp.updateWeatherData = function (callback) {
     }
     var weatherData = [];
     for (var i = 0; i < city.length; i++) {
-        // console.log(city[i]);
         var api = 'https://api.heweather.com/x3/weather?city=' + city[i] + '&key='+ flickrAPIKey+ '';
         $$.get(api, function(results) {
             results = JSON.parse(results);
             var needData= results["HeWeather data service 3.0"][0];
-            // console.log(needData);
             weatherData.push({
                 city: needData.basic.city,
                 cnty: needData.basic.cnty,
@@ -132,24 +123,29 @@ myApp.updateWeatherData = function (callback) {
             localStorage.storeData = JSON.stringify(weatherData);
             if (callback) callback(); 
         });
-
     }
-
 }
 
 myApp.buildIndexHtml = function () {
     var weatherData = localStorage.storeData;
     if (!weatherData) {
         return;
+        var api = 'https://api.heweather.com/x3/weather?city=北京' + '&key='+ flickrAPIKey+ '';
+        $$.get(api, function(results) {
+            var data = JSON.parse(results);
+            console.log(data);
+        })
     }
+        
     $$('.places-list ul').html('');
     weatherData = JSON.parse(weatherData); 
     var html = myApp.homeItemsTemplate(weatherData);
     $$('.places-list ul').html(html);
+    
 }
 
 myApp.updateWeatherData(function () {
-        myApp.buildIndexHtml();
+    myApp.buildIndexHtml();
 });
 
 
@@ -189,21 +185,16 @@ $$('.places-list').on('delete', '.swipeout', function() {
 	localStorage.storeData = JSON.stringify(WholeData); 
 })
 
-// //背景图片
-// myApp.onPageAfterAnimation('detail', function (page) {
-// 	console.log('test');
-// 	function placePhotos () {
-// 		var api = 'http://www.tngou.net/tnfs/api/classify';
-//         $$.get(api, function(results) {
-//         	console.log(results);            
-//         });
-// 	}
-// 	placePhotos();
-// })
-// function placePhotos () {
-// 		var api = 'http://api.laifudao.com/open/tupian.json';
-//         $$.get(api, function(results) {
-//         	console.log(results);            
-//         });
-// }
-// placePhotos ();
+//背景图片
+var Consumer_Key = 'bSMgHdOHOQICt1q6gkNCumjh1hsLzkn9gmEZ3zcv';
+var api = 'https://api.500px.com/v1/photos?feature=popular&image_size=440&consumer_key=' + Consumer_Key;
+myApp.onPageAfterAnimation('detail', function (page) {
+	function placePhotos () {
+        $$.get(api, function(results) {
+        	var data = JSON.parse(results);
+            var pos = Math.floor(Math.random() * 20);
+            $$('.detail-page-header').css('background-image', 'url'+'('+data.photos[pos].image_url+')')          
+        });
+	}
+	placePhotos();
+})
