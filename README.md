@@ -1,6 +1,6 @@
 # Weather
 
-A simple weather webapp for learning Framewoek7.  
+A simple weather webapp for learning Framework7.  
 
 It's easy for you to learn ineracte data and render dom. 
 
